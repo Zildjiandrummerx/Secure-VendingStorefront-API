@@ -1,0 +1,327 @@
+{# ==========================================
+   JINJA INHERITANCE & RBAC CONTEXT
+   Extends 'base.html'. Note: This entire page is protected by the 
+   @admin_required decorator in Python. If a non-admin tries to 
+   access /admin, the server returns a 403 Forbidden before 
+   this HTML is ever generated.
+========================================== #}
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- ========================================== -->
+<!-- ADMIN COMMAND CENTER HEADER                -->
+<!-- ========================================== -->
+<div class="row mb-5">
+    <div class="col-12 text-center">
+        <h2 class="fw-bold"><i class="fas fa-cogs text-warning"></i> System Administration</h2>
+        <p class="text-muted">Manage Inventory, Identities & View Operational Logs</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- ========================================== -->
+    <!-- 1. INVENTORY MANAGEMENT (CRUD OPERATIONS)  -->
+    <!-- ========================================== -->
+    <div class="col-lg-12 mb-4">
+        <div class="card shadow-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-boxes"></i> Inventory Management</h5>
+            </div>
+            <div class="card-body">
+                
+                <!-- 
+                    CREATE: Add New Product Form 
+                    UX/UI: step="0.01" forces the browser to only accept standard currency formats.
+                -->
+                <div class="row g-2 mb-4 bg-light p-3 rounded align-items-center">
+                    <div class="col-md-3">
+                        <input type="text" id="newName" class="form-control" placeholder="Product Name">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" id="newPrice" class="form-control" placeholder="Price (e.g. 1.25)" step="0.01">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" id="newStock" class="form-control" placeholder="Initial Stock">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-success w-100" onclick="adminAddProduct()">
+                            <i class="fas fa-plus"></i> Add Product
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 
+                    READ/UPDATE/DELETE: Products Data Table 
+                    Jinja loops through the database object passed from app.py.
+                -->
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Product Name</th>
+                            <th>Price ($)</th>
+                            <th>Stock</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in products %}
+                        <tr>
+                            <td>{{ p.id }}</td>
+                            <td class="fw-bold">{{ p.name }}</td>
+                            
+                            <!-- 
+                                STATE BINDING: We inject the current database values directly 
+                                into the input tags so the Admin can edit them quickly inline.
+                            -->
+                            <td><input type="number" id="price-{{ p.id }}" class="form-control form-control-sm w-50" value="{{ p.price }}" step="0.01"></td>
+                            <td><input type="number" id="stock-{{ p.id }}" class="form-control form-control-sm w-50" value="{{ p.stock }}"></td>
+                            
+                            <td>
+                                <!-- 
+                                    IDE DEFENSE: We wrap {{ p.id }} in single quotes ('{{ p.id }}'). 
+                                    This prevents VS Code's JavaScript linter from throwing syntax errors, 
+                                    while Jinja perfectly parses it into a string (e.g., '1') for the JS function.
+                                -->
+                                <button class="btn btn-primary btn-sm me-1" onclick="adminUpdateProduct('{{ p.id }}')">Update</button>
+                                <button class="btn btn-danger btn-sm" onclick="adminDeleteProduct('{{ p.id }}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. USER IDENTITY MANAGEMENT (CRUD)         -->
+    <!-- ========================================== -->
+    <!-- 
+        NEW UPGRADE: This panel allows the Root Admin to oversee 
+        all registered accounts, reset passwords securely (PBKDF2), 
+        promote standard users to Admins, and delete malicious users.
+    -->
+    <div class="col-lg-12 mb-4">
+        <div class="card shadow-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-users-cog"></i> Identity & Access Management</h5>
+            </div>
+            <div class="card-body">
+                
+                <!-- Admin: Create New User Form -->
+                <div class="row g-2 mb-4 bg-light p-3 rounded align-items-center">
+                    <div class="col-md-3">
+                        <input type="text" id="newUsername" class="form-control" placeholder="New Username">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="newPassword" class="form-control" placeholder="Secure Password">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="newRole" class="form-select">
+                            <option value="false">Standard User</option>
+                            <option value="true">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-dark w-100" onclick="adminCreateUser()">
+                            <i class="fas fa-user-plus"></i> Create User
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin: Users Data Table -->
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover align-middle text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Password Reset</th> <!-- CHANGED TO REFLECT UI CLEANUP -->
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td class="text-muted">{{ u.id }}</td>
+                                <td>
+                                    <input type="text" id="edit-user-{{ u.id }}" class="form-control form-control-sm" value="{{ u.username }}">
+                                </td>
+                                <td>
+                                    <!-- UI CLEANUP: The ugly hash string is completely removed. -->
+                                    <input type="text" id="edit-pass-{{ u.id }}" class="form-control form-control-sm" placeholder="Type to reset password...">
+                                </td>
+                                <td>
+                                    <select id="edit-role-{{ u.id }}" class="form-select form-select-sm">
+                                        <option value="false" {% if not u.is_admin %}selected{% endif %}>User</option>
+                                        <option value="true" {% if u.is_admin %}selected{% endif %}>Admin</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button class="btn btn-success btn-sm me-1 mb-1" onclick="adminUpdateUser('{{ u.id }}')"><i class="fas fa-save"></i> Save</button>
+                                    <button class="btn btn-danger btn-sm mb-1" onclick="adminDeleteUser('{{ u.id }}')"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. AUDIT & LOGGING DASHBOARDS              -->
+    <!-- ========================================== -->
+    
+    <!-- PURCHASE LOGS -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-4 h-100">
+            <div class="card-header bg-info text-white"><h5 class="mb-0"><i class="fas fa-receipt"></i> Purchase History</h5></div>
+            <!-- max-height + overflow-y: Creates a clean, scrollable window so the page doesn't stretch infinitely -->
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-sm text-center">
+                    <thead><tr><th>Time</th><th>User</th><th>Product</th><th>Qty</th></tr></thead>
+                    <tbody>
+                        {% for log in purchases %}
+                        <tr>
+                            <!-- 
+                                CUSTOM FILTER PIPELINE: 
+                                {{ log.timestamp|cst_time }} passes the raw UTC database datetime 
+                                into our custom Python filter inside app.py to format it nicely for El Salvador time.
+                            -->
+                            <td class="text-muted small">{{ log.timestamp|cst_time }}</td>
+                            
+                            <!-- 
+                                SQL ALCHEMY RELATIONSHIPS IN ACTION: 
+                                We access log.user.username without writing a JOIN statement! 
+                                SQLAlchemy's 'backref' handles the foreign key resolution automatically.
+                                
+                                NEW GHOST PROTOCOL: Checks if user exists. If they were deleted by the admin,
+                                it gracefully prints "Deleted User" to maintain financial audit accuracy.
+                            -->
+                            {% if log.user %}
+                                <td class="fw-bold text-primary">{{ log.user.username }}</td>
+                            {% else %}
+                                <td class="fw-bold text-danger fst-italic">Deleted User</td>
+                            {% endif %}
+                            
+                            <td>{{ log.product.name }}</td>
+                            <td><span class="badge bg-success">{{ log.quantity }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRICE CHANGE LOGS -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-4 h-100">
+            <div class="card-header bg-secondary text-white"><h5 class="mb-0"><i class="fas fa-chart-line"></i> Price Change Logs</h5></div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-sm text-center">
+                    <thead><tr><th>Time</th><th>Product</th><th>Old Price</th><th>New Price</th></tr></thead>
+                    <tbody>
+                        {% for log in price_logs %}
+                        <tr>
+                            <td class="text-muted small">{{ log.timestamp|cst_time }}</td>
+                            <td class="fw-bold">{{ log.product.name }}</td>
+                            
+                            <!-- 
+                                NATIVE STRING FORMATTING: 
+                                |format() forces floats to always show 2 decimal places (e.g., $1.50 instead of $1.5).
+                            -->
+                            <td class="text-danger">${{ "%.2f"|format(log.old_price) }}</td>
+                            <td class="text-success"><i class="fas fa-arrow-right"></i> ${{ "%.2f"|format(log.new_price) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- JAVASCRIPT: SECURE ADMIN ENGINE            -->
+<!-- ========================================== -->
+<script>
+    // Extract the global CSRF token from the meta tag to authenticate POST/PUT/DELETE requests.
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // CORE API WRAPPER
+    async function adminApiCall(endpoint, method, payload) {
+        const res = await fetch(endpoint, {
+            method: method,
+            headers: { 
+                'X-CSRFToken': csrfToken, 
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        // SYNC STRATEGY: 
+        // Because this page is Server-Side Rendered (SSR), the easiest way to reflect 
+        // updated databases (like the new log entries) is to simply trigger a hard page reload on success.
+        if (res.ok) {
+            window.location.reload(); 
+        } else {
+            // UPGRADE: Properly parses and displays the Python backend's rejection message.
+            const data = await res.json();
+            alert(`Action Failed: ${data.error || 'Check permissions.'}`);
+        }
+    }
+
+    // --- PRODUCT CRUD ---
+    function adminAddProduct() {
+        const name = document.getElementById('newName').value;
+        const price = document.getElementById('newPrice').value;
+        const stock = document.getElementById('newStock').value;
+        
+        // Client-side guard check before wasting a network call
+        if (!name || !price || !stock) return alert("Fill all fields before submitting.");
+        adminApiCall('/api/products', 'POST', { name, price, stock });
+    }
+
+    function adminUpdateProduct(id) {
+        const price = document.getElementById(`price-${id}`).value;
+        const stock = document.getElementById(`stock-${id}`).value;
+        adminApiCall(`/api/products/${id}`, 'PUT', { price, stock });
+    }
+
+    function adminDeleteProduct(id) {
+        // UX DEFENSE: Always prompt for confirmation on destructive actions!
+        if(confirm("Permanently delete this product? This will also wipe its history logs.")) {
+            adminApiCall(`/api/products/${id}`, 'DELETE', {});
+        }
+    }
+
+    // --- USER CRUD ---
+    function adminCreateUser() {
+        const username = document.getElementById('newUsername').value;
+        const password = document.getElementById('newPassword').value;
+        const is_admin = document.getElementById('newRole').value === 'true';
+        
+        if (!username || !password) return alert("Fill out both username and password.");
+        adminApiCall('/api/users', 'POST', { username, password, is_admin });
+    }
+
+    function adminUpdateUser(id) {
+        const username = document.getElementById(`edit-user-${id}`).value;
+        const password = document.getElementById(`edit-pass-${id}`).value; 
+        const is_admin = document.getElementById(`edit-role-${id}`).value === 'true';
+        
+        adminApiCall(`/api/users/${id}`, 'PUT', { username, password, is_admin });
+    }
+
+    function adminDeleteUser(id) {
+        if(confirm("DELETE USER: Are you sure? Their purchase history will remain for auditing, but their identity will be permanently erased.")) {
+            adminApiCall(`/api/users/${id}`, 'DELETE', {});
+        }
+    }
+</script>
+{% endblock %}

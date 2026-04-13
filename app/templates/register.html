@@ -1,0 +1,93 @@
+{# ==========================================
+   JINJA INHERITANCE
+   Extends 'base.html' to inherit the global Navbar,
+   Bootstrap CDN links, and flashed error messages.
+========================================== #}
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- ========================================== -->
+<!-- REGISTRATION PORTAL LAYOUT                 -->
+<!-- ========================================== -->
+<!-- 
+    UI Design: 
+    We use 'justify-content-center' and 'col-md-5' to create 
+    a perfectly centered, focused card layout that looks great 
+    on both massive desktop monitors and mobile devices. 
+-->
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow-4">
+            
+            <!-- CARD HEADER -->
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0"><i class="fas fa-user-plus"></i> Create Account</h4>
+            </div>
+            
+            <!-- ========================================== -->
+            <!-- REGISTRATION FORM                          -->
+            <!-- ========================================== -->
+            <div class="card-body p-4">
+                <!-- 
+                    SECURITY: We specifically use method="POST" because user 
+                    passwords should never be passed in the URL (which happens with GET).
+                -->
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    
+                    <!-- 
+                        DEFENSE: CROSS-SITE REQUEST FORGERY (CSRF) TOKEN
+                        This hidden input is mandatory. Flask-WTF generates a unique, 
+                        cryptographic token for this session. If a hacker tries to submit 
+                        this form from a fake, third-party website, the backend will 
+                        reject it because this token will be missing or invalid.
+                    -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <!-- ========================================== -->
+                    <!-- USERNAME INPUT                             -->
+                    <!-- ========================================== -->
+                    <!-- 
+                        UX Design: 'form-outline' triggers MDBootstrap's 
+                        beautiful Material Design floating label animation.
+                        
+                        Frontend Defense: The 'required' attribute prevents the user 
+                        from clicking Submit if the field is empty. (If they bypass this 
+                        using Chrome DevTools, our Python backend's .strip() validation 
+                        will still catch them).
+                    -->
+                    <div class="form-outline mb-4">
+                        <input type="text" id="regUser" name="username" class="form-control" required />
+                        <label class="form-label" for="regUser">Choose Username</label>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- PASSWORD INPUT                             -->
+                    <!-- ========================================== -->
+                    <div class="form-outline mb-4">
+                        <input type="password" id="regPass" name="password" class="form-control" required />
+                        <label class="form-label" for="regPass">Secure Password</label>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- RECOVERY PIN FIELD                         -->
+                    <!-- ========================================== -->
+                    <div class="form-outline mb-4">
+                        <input type="password" id="regPin" name="pin" class="form-control" pattern="\d{4}" title="Exactly 4 digits" maxlength="4" required />
+                        <label class="form-label" for="regPin">Create 4-Digit Recovery PIN</label>
+                        <div class="form-helper text-muted mt-1" style="font-size: 0.8rem;">
+                            <i class="fas fa-info-circle"></i> Save this! You need it to reset your password.
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- SUBMIT BUTTON                              -->
+                    <!-- ========================================== -->
+                    <button type="submit" class="btn btn-primary btn-block mb-3">
+                        Register & Login
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

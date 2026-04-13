@@ -1,0 +1,42 @@
+# ==========================================
+# 🛑 SECURITY: CRITICAL SECRETS 
+# ==========================================
+# NEVER commit the deployment/push scripts if they contain tokens or passwords!
+github_push.sh
+.env
+.env.local
+
+# ==========================================
+# 🐍 PYTHON & FLASK ARTIFACTS
+# ==========================================
+# Ignores compiled byte-code to keep the repo completely clean
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ==========================================
+# 📦 VIRTUAL ENVIRONMENTS
+# ==========================================
+# Never commit dependencies. The requirements.txt file handles this.
+venv/
+.venv/
+env/
+ENV/
+
+# ==========================================
+# 🗄️ DATABASE FILES
+# ==========================================
+# Do not commit the local SQLite database. The app auto-generates a clean one on boot.
+*.db
+*.sqlite3
+vending.db
+instance/
+
+# ==========================================
+# 💻 OS & IDE JUNK FILES
+# ==========================================
+# Keeps Mac/Windows hidden system files and VS Code settings out of the repo
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

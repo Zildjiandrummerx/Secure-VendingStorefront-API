@@ -1,0 +1,73 @@
+{# ==========================================
+   JINJA INHERITANCE
+   This template extends 'base.html'. 
+   This keeps our code DRY (Don't Repeat Yourself) 
+   by reusing the Navbar, CSS, and JS imports.
+========================================== #}
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mb-4">
+    <div class="col-md-8">
+        
+        <!-- ========================================== -->
+        <!-- THE PUBLIC SEARCH BAR (REAL-TIME)          -->
+        <!-- ========================================== -->
+        <!-- 
+            UI Design: We use border-0 and shadow-none on the input 
+            to create a seamless, flat Google Material aesthetic. 
+        -->
+        <div class="card shadow-2-strong mb-4 border-0">
+            <div class="card-body p-2 d-flex align-items-center">
+                <i class="fas fa-search text-primary fa-lg mx-3"></i>
+                
+                <!-- 
+                    DEFENSE & UX:
+                    1. oninput: Better than onkeyup. It fires instantly even if 
+                       the user pastes text via the right-click mouse menu.
+                    2. autocomplete="off": Prevents the browser's ugly default 
+                       history dropdown from blocking our beautiful results.
+                -->
+                <input type="text" id="searchInput" class="form-control form-control-lg border-0 shadow-none" 
+                       placeholder="Search for a soda (e.g., Coca-Cola)..." 
+                       oninput="triggerSearch()" autocomplete="off" />
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- DYNAMIC SORT CONTROLS                      -->
+        <!-- ========================================== -->
+        <!-- 
+            These buttons trigger the JS function with specific string arguments. 
+            The JS engine handles the state so we don't have to reload the page.
+        -->
+        <div class="text-center">
+            <div class="btn-group shadow-0">
+                <button class="btn btn-outline-primary" onclick="triggerSearch('likes')">
+                    <i class="fas fa-fire"></i> Sort Popular
+                </button>
+                <button class="btn btn-outline-primary" onclick="triggerSearch('name')">
+                    <i class="fas fa-sort-alpha-down"></i> Sort A-Z
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- STACKED ARCADE INVENTORY (DOM INJECTION)   -->
+<!-- ========================================== -->
+<!-- 
+    ARCHITECTURE NOTE: 
+    Notice this div is completely empty. We intentionally decouple 
+    the data rendering from the server. Flask sends raw JSON via the API, 
+    and the client's browser (main.js) builds the HTML inside this container. 
+    This creates a lightning-fast, Single Page Application (SPA) feel.
+-->
+<div class="row justify-content-center">
+    <div class="col-md-8" id="product-container">
+        <!-- JavaScript will inject the stacked product cards here -->
+    </div>
+</div>
+{% endblock %}
