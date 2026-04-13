@@ -73,21 +73,24 @@ In enterprise accounting, deleting a user must never delete their financial hist
 
 ### 1. Run Locally (Docker)
 You do not need Python installed on your local machine. The entire environment is containerized.
-```bash
+
 # Build the hardened image
+```bash
 docker build -t enterprise-vending-api .
-
+```
 # Run the container locally on port 8080
+```bash
 docker run -p 8080:8080 enterprise-vending-api
-
+```
 Navigate to http://localhost:8080 in your web browser.
 
 
 ### 2. Default Administrator Credentials
 The system automatically bootstraps a supreme Root Administrator on initial boot:
-
+```bash
 Username: root
 Password: DuMmYP4$5W0rD_
+```
 Recovery PIN: 0000 (Note: The Root account is explicitly blocked from using the web-based password recovery portal to prevent ATO exploits).
 
 
@@ -96,16 +99,17 @@ The repository includes an idempotent Infrastructure-as-Code (IaC) Bash script (
 
 Ensure you have the gcloud CLI installed and authenticated to your Google account.
 Open the deploy.sh file and modify the Global Configuration block at the top:
-
+```bash
 PROJECT_ID="your-gcp-project-id" # Change this to your actual GCP Project ID
 SERVICE_NAME="vending-api"       # Optional: Name of your Cloud Run service
 REGION="us-central1"             # Optional: Change to your preferred GCP region
 REPOSITORY="vending-repo"        # Optional: Name of the Artifact Registry repo
-
+```
 Make the script executable and run it:
+```bash
 chmod +x deploy.sh
 ./deploy.sh
-
+```
 The script will automatically provision Artifact Registry, submit the build to Cloud Build, deploy to Cloud Run, securely inject a randomized 256-bit Hex SECRET_KEY, apply the Domain Restricted Sharing bypass if needed, and output your live HTTPS URL.
 
 
